@@ -81,7 +81,7 @@ mkdir -p $DATA_ROOT/imagenet
 tar -xf <PATH/TO/ILSVRC2012_img_train.tar> -C $DATA_ROOT/imagenet
 tar -xf <PATH/TO/ILSVRC2012_img_val.tar>   -C $DATA_ROOT/imagenet
 ```
----
+
 ### COCO (2017) — for Detection / Instance Segmentation
 
 Expected structure:
@@ -113,8 +113,6 @@ unzip -q val2017.zip
 unzip -q annotations_trainval2017.zip
 ```
 
----
-
 ### ADE20K (ADEChallengeData2016) — for Semantic Segmentation
 
 Expected structure (commonly used by MMSegmentation):
@@ -137,8 +135,6 @@ mkdir -p $DATA_ROOT/ade20k && cd $DATA_ROOT/ade20k
 wget -c http://data.csail.mit.edu/places/ADEchallenge/ADEChallengeData2016.zip
 unzip -q ADEChallengeData2016.zip
 ```
-
----
 
 ### Point your training configs to the dataset
 
