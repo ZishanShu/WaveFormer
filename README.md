@@ -6,12 +6,15 @@ WaveFormer: Frequency-Time Decoupled Vision Modeling with Wave Equation
 
 **WaveFormer** is the **First** Vision Backbone based on Wave Equation.
 
+![demo](figs/fig2.png)
 
 WaveFormer is evaluated as a general-purpose backbone on:
 - **Image Classification**
 - **Object Detection / Instance Segmentation**
 - **Semantic Segmentation**
 - **More fine-grained applications (coming soon)**
+
+![demo](figs/fig3.png)
 
 ## Installation
 
