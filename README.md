@@ -188,6 +188,7 @@ waveformer/
 ```
 
 ## Citation
+```
 @misc{shu2026waveformerfrequencytimedecoupledvision,
       title={WaveFormer: Frequency-Time Decoupled Vision Modeling with Wave Equation}, 
       author={Zishan Shu and Juntong Wu and Wei Yan and Xudong Liu and Hongyu Zhang and Chang Liu and Youdong Mao and Jie Chen},
@@ -197,3 +198,4 @@ waveformer/
       primaryClass={cs.CV},
       url={https://arxiv.org/abs/2601.08602}, 
 }
+```
