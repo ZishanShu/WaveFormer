@@ -1,6 +1,4 @@
-# WaveFormer
-
-WaveFormer: Frequency-Time Decoupled Vision Modeling with Wave Equation
+# WaveFormer: Frequency-Time Decoupled Vision Modeling with Wave Equation
 
 ## Introduction
 
