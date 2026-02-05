@@ -1,8 +1,6 @@
 # WaveFormer: Frequency-Time Decoupled Vision Modeling with Wave Equation
 
-## Introduction
-
-**WaveFormer** is the **First** Vision Backbone based on Wave Equation.
+## WaveFormer is the First Vision Backbone based on Wave Equation.
 
 ![demo](figs/fig2.png)
 
