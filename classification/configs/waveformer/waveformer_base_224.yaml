@@ -1,0 +1,16 @@
+MODEL:
+  TYPE: WaveFormer
+  NAME: waveformer_base
+  DROP_PATH_RATE: 0.5
+  WAVE:
+    EMBED_DIM: 128
+    DEPTHS: [2, 2, 18, 2]
+    LAYER_SCALE: 1.e-5
+    POST_NORM: True
+    NUM_HEADS: 1
+TRAIN:
+  BASE_LR: 5.e-4
+  WEIGHT_DECAY: 0.08
+SAVE_FREQ: 10
+DATA:
+  IMG_SIZE: 224

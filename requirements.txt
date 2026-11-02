@@ -1,0 +1,6 @@
+torch>=1.13
+torchvision
+timm
+yacs
+termcolor
+fvcore

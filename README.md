@@ -7,7 +7,6 @@
 WaveFormer is evaluated as a general-purpose backbone on:
 - **Image Classification**
 - **Object Detection / Instance Segmentation**
-- **Semantic Segmentation**
 - **More fine-grained applications (coming soon)**
 
 ![demo](figs/fig3.png)
@@ -15,13 +14,10 @@ WaveFormer is evaluated as a general-purpose backbone on:
 ## Installation
 
 ### Requirements
-- Python >= 3.7
-- PyTorch >= 1.8.0
-- timm
-- einops
-- torch_dct
-- (Optional) MMSegmentation (for semantic segmentation)
-- (Optional) MMDetection (for object detection / instance segmentation)
+- Python >= 3.8
+- PyTorch >= 1.13 and torchvision
+- timm, yacs, termcolor, fvcore
+- (Optional) MMDetection 3.x + MMCV (>= 2.0.0, < 2.2.0) + MMEngine (for object detection / instance segmentation)
 
 ### Installation
 
@@ -29,25 +25,33 @@ WaveFormer is evaluated as a general-purpose backbone on:
 ```bash
 git clone https://github.com/ZishanShu/WaveFormer.git
 cd WaveFormer
-````
+```
 
 #### 2) Create the environment
 
 ```bash
-conda env create -f WaveFormer.yaml
+conda create -n WaveFormer python=3.10 -y
 conda activate WaveFormer
+
+# PyTorch with CUDA, e.g. PyTorch 2.1 + CUDA 11.8 (prebuilt MMCV wheels are available for it)
+pip install torch==2.1.2 torchvision==0.16.2 --index-url https://download.pytorch.org/whl/cu118
 ```
 
 #### 3) Install minimal dependencies via pip
 
 ```bash
-pip install timm einops torch-dct
+pip install timm yacs termcolor fvcore
 ```
 
 #### 4) Integrate with OpenMMLab frameworks
 
-* **MMSegmentation** for semantic segmentation
 * **MMDetection** for object detection / instance segmentation
+
+```bash
+pip install -U openmim
+mim install mmengine "mmcv>=2.0.0,<2.2.0"
+mim install "mmdet>=3.0.0"
+```
 
 ## Data Download
 Set a data root first:
@@ -109,77 +113,64 @@ unzip -q val2017.zip
 unzip -q annotations_trainval2017.zip
 ```
 
-### ADE20K (ADEChallengeData2016) — for Semantic Segmentation
+### Point the training scripts to the dataset
 
-Expected structure (commonly used by MMSegmentation):
+The training scripts read the dataset paths from environment variables (relative paths are resolved from the repository root):
 
-```
-$DATA_ROOT/ade20k/ADEChallengeData2016/
-├── images/
-│   ├── training/
-│   └── validation/
-└── annotations/
-    ├── training/
-    └── validation/
-```
+* ImageNet-1K: `DATA_PATH=<DATA_ROOT>/imagenet` (default: `data/imagenet`)
+* COCO: `DATA=<DATA_ROOT>/coco` (default: `data/coco`)
 
-Download and extract:
+## Pretrained Weights
 
-```bash
-mkdir -p $DATA_ROOT/ade20k && cd $DATA_ROOT/ade20k
+Weights are hosted on Hugging Face: [Zishan0602/WaveFormer](https://huggingface.co/Zishan0602/WaveFormer)
 
-wget -c http://data.csail.mit.edu/places/ADEchallenge/ADEChallengeData2016.zip
-unzip -q ADEChallengeData2016.zip
-```
+| Task | Model | Config | Checkpoint |
+| :---: | :---: | :---: | :---: |
+| COCO detection (Mask R-CNN, 1x, multi-scale) | WaveFormer-B | [config](detection/configs/waveformer/mask_rcnn_waveformer_base_fpn_ms_1x_coco.py) | [run_det_ms_1x_dp03.pth](https://huggingface.co/Zishan0602/WaveFormer/resolve/main/run_det_ms_1x_dp03.pth) |
 
-### Point your training configs to the dataset
-
-Use the corresponding `--data-path <DATA_PATH>` / `data_root = <DATA_ROOT/...>` fields in your configs:
-
-* ImageNet-1K: `<DATA_ROOT>/imagenet`
-* COCO: `<DATA_ROOT>/coco`
-* ADE20K: `<DATA_ROOT>/ade20k/ADEChallengeData2016`
+Download it into `checkpoints/`
 
 ## Model Training and Inference
+`run_classification.sh` and `run_detection.sh` train WaveFormer-B on a single node with 16 GPUs by default (set `GPUS=<NUM_GPUS>` to change it) and write checkpoints and logs to `output/`.
+
 ### Classification
 ```bash
-torchrun --nproc_per_node=<NUM_GPUS> main.py \
-  --cfg <PATH/TO/CONFIGS/waveformer/classification/waveformer_{tiny|small|base}_224.yaml> \
-  --batch-size <BATCH_SIZE> \
-  --data-path <DATA_PATH> \
-  --output <OUTPUT_DIR>
+DATA_PATH=$DATA_ROOT/imagenet bash run_classification.sh
 ```
+Checkpoints and logs: `output/classification/waveformer_base/default/`
 
 ### Detection
+Mask R-CNN + FPN, 1x schedule with multi-scale training. The backbone is initialized from the ImageNet-1K checkpoint of the classification step, `output/classification/waveformer_base/default/ckpt_epoch_ema_best.pth` (set `PRETRAINED=<CKPT>` to use another one).
 ```bash
-bash train_det.sh configs/waveformer/mask_rcnn_fpn_coco_{tiny|small|base}.py <NUM_GPUS>
+DATA=$DATA_ROOT/coco bash run_detection.sh
 ```
+Checkpoints and logs: `output/detection/waveformer_base/`
 
-### Segmentation
+Evaluate the released detection checkpoint on COCO val2017:
 ```bash
-CONFIG=<PATH/TO/CONFIGS/waveformer/seg/upernet_waveformer_160k_ade20k_512x512_{tiny|small|base}.py> \
-GPUS=<NUM_GPUS> \
-NNODES=${NNODES:-1} \
-NODE_RANK=${NODE_RANK:-0} \
-PYTHONPATH="$PWD":$PYTHONPATH \
-python -m torch.distributed.launch \
-  --nnodes=$NNODES \
-  --node_rank=$NODE_RANK \
-  --nproc_per_node=$GPUS \
-  ./tools/train.py $CONFIG \
-  --work-dir <WORK_DIR> \
-  --launcher pytorch
+PYTHONPATH=detection python -m torch.distributed.launch --nproc_per_node=<NUM_GPUS> \
+  detection/tools/test.py \
+  detection/configs/waveformer/mask_rcnn_waveformer_base_fpn_ms_1x_coco.py \
+  checkpoints/run_det_ms_1x_dp03.pth \
+  --launcher pytorch \
+  --cfg-options test_dataloader.dataset.data_root=$DATA_ROOT/coco \
+                test_evaluator.ann_file=$DATA_ROOT/coco/annotations/instances_val2017.json
 ```
 
 
 ## File Structure
 ```
-waveformer/
-├── WaveFormer/              # Core model code
-│   ├── WaveFormer.py        # Standard WaveFormer implementation
-│   └── WaveFormer_dct.py    # DCT-based implementation
-├── ...
-└── model.py                 # Framework adaptation layer
+WaveFormer/
+├── run_classification.sh / run_detection.sh
+├── classification/
+│   ├── models/waveformer.py       # WaveFormer implementation
+│   ├── configs/waveformer/        # waveformer_base_224.yaml
+│   └── main.py
+└── detection/
+    ├── waveformer/waveformer.py   # WaveFormer implementation
+    ├── model.py                   # Framework adaptation layer (MMDetection)
+    ├── configs/waveformer/        # mask_rcnn_waveformer_base_fpn_ms_1x_coco.py
+    └── tools/                     # train.py / test.py
 ```
 
 ## Citation

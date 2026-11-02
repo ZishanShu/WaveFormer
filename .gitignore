@@ -1,0 +1,11 @@
+__pycache__/
+*.py[cod]
+
+# 训练输出 / 数据 / 权重（只忽略仓库根目录下的 data/，classification/data/ 是代码）
+/output/
+/data/
+/work_dirs/
+.dist_test/
+*.pth
+/checkpoints/
+.DS_Store
